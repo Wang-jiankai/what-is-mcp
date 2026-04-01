@@ -1,0 +1,21 @@
+{
+  "name": "what-is-mcp",
+  "version": "1.0.0",
+  "description": "面向零基础新手的 MCP（Model Context Protocol）概念教学仓库",
+  "type": "module",
+  "scripts": {
+    "example": "tsx examples/01-basic-server.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

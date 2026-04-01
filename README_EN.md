@@ -4,6 +4,10 @@
 
 ---
 
+> 🌐 **Language**: [中文](./README.md) | [English（当前）](./README_EN.md)
+
+---
+
 ## 📚 Series Repositories
 
 This series contains three repositories to help you master the core concepts of Claude Code:
@@ -78,86 +82,64 @@ Executable operations and readable data exposed by Servers to the AI.
 ### Create an MCP Server
 
 ```typescript
-import { createMCPServer } from "@modelcontextprotocol/sdk";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio";
+import { z } from "zod";
 
-const server = createMCPServer({
+// Create an MCP Server
+const server = new McpServer({
   name: "filesystem-server",
-  version: "1.0.0",
-
-  // Define tools
-  tools: {
-    readFile: {
-      description: "Read file contents",
-      parameters: {
-        path: { type: "string", required: true }
-      },
-      async execute({ path }) {
-        const fs = await import("fs/promises");
-        const content = await fs.readFile(path, "utf-8");
-        return { content };
-      }
-    },
-
-    writeFile: {
-      description: "Write content to a file",
-      parameters: {
-        path: { type: "string", required: true },
-        content: { type: "string", required: true }
-      },
-      async execute({ path, content }) {
-        const fs = await import("fs/promises");
-        await fs.writeFile(path, content, "utf-8");
-        return { success: true };
-      }
-    }
-  },
-
-  // Define resources
-  resources: {
-    "config://app": {
-      description: "Application configuration",
-      async load() {
-        return { type: "application/json", content: '{"version": "1.0"}' };
-      }
-    }
-  }
+  version: "1.0.0"
 });
 
-// Start the server
-server.listen(3000);
-console.log("MCP Server started, listening on port 3000");
+// Register a tool: read file
+server.tool(
+  "readFile",                          // tool name
+  { path: z.string() },                 // parameters (validated with zod)
+  async ({ path }) => {                 // implementation
+    const fs = await import("fs/promises");
+    const content = await fs.readFile(path, "utf-8");
+    return { content: [{ type: "text", text: content }] };
+  }
+);
+
+// Register another tool: write file
+server.tool(
+  "writeFile",
+  { path: z.string(), content: z.string() },
+  async ({ path, content }) => {
+    const fs = await import("fs/promises");
+    await fs.writeFile(path, content, "utf-8");
+    return { content: [{ type: "text", text: "File written successfully" }] };
+  }
+);
+
+// Start server via stdio transport
+const transport = new StdioServerTransport();
+server.run(transport);
 ```
 
-### Use MCP in an Agent
+> These are **real API** examples. MCP Server uses `new McpServer()` with `.tool()` for tools and `StdioServerTransport` for communication.
+
+### Using MCP in an Agent
 
 ```typescript
-import { Agent } from "@anthropic-ai/claude-code";
-import { connectMCPServer } from "@modelcontextprotocol/sdk";
+import { query } from "@anthropic-ai/claude-agent-sdk";
 
-async function main() {
-  // Connect to MCP Server
-  const mcpClient = await connectMCPServer({
-    transport: "stdio",
-    server: "filesystem-server"
-  });
+// Claude Agent SDK has native MCP support
+// Just configure MCP Server in Claude Desktop, and the Agent discovers and calls its tools automatically
 
-  // Create Agent and connect MCP
-  const agent = new Agent({
-    model: "claude-opus-4-6",
-    mcpClients: [mcpClient],
-    systemPrompt: "You are a file management assistant. You can read and write files."
-  });
-
-  // AI automatically calls MCP tools
-  const result = await agent.run(
-    "Create a hello.txt file for me with the content 'Hello, MCP!'"
-  );
-
-  console.log(result);
+for await (const message of query({
+  prompt: "Create a hello.txt file with the content 'Hello, MCP!'",
+  options: {
+    allowedTools: ["Bash", "Write", "Read"]
+  }
+})) {
+  console.log(message);
 }
-
-main();
 ```
+
+> MCP Servers are started by the Host (e.g., Claude Desktop), and the Agent SDK communicates with them via the MCP protocol.
 
 ---
 
@@ -259,15 +241,16 @@ what-is-mcp/
 | `references/` | Reference solutions for exercises | Self-check after attempting |
 | `assets/` | Diagrams referenced by `concepts/` articles | Visual aid |
 
-### MCP Server Ecosystem
+### MCP Server Ecosystem (Official)
 
 | Server | Purpose | Install Command |
 |--------|---------|----------------|
-| **filesystem** | Local file read/write | `npm i @modelcontextprotocol/server-filesystem` |
-| **postgres** | PostgreSQL database | `npm i @modelcontextprotocol/server-postgres` |
-| **slack** | Slack message integration | `npm i @modelcontextprotocol/server-slack` |
-| **github** | GitHub API operations | `npm i @modelcontextprotocol/server-github` |
-| **sqlite** | SQLite database | `npm i @modelcontextprotocol/server-sqlite` |
+| **server-filesystem** | Local file read/write | `npm i @modelcontextprotocol/server-filesystem` |
+| **server-postgres** | PostgreSQL database | `npm i @modelcontextprotocol/server-postgres` |
+| **server-github** | GitHub API operations | `npm i @modelcontextprotocol/server-github` |
+| **server-slack** | Slack message integration | `npm i @modelcontextprotocol/server-slack` |
+| **server-sqlite** | SQLite database | `npm i @modelcontextprotocol/server-sqlite` |
+| **server-sentry** | Error monitoring | `npm i @modelcontextprotocol/server-sentry` |
 
 ### How to Use This Repository
 

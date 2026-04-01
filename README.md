@@ -4,6 +4,10 @@
 
 ---
 
+> 🌐 **Language**: [English](./README_EN.md)
+
+---
+
 ## 📚 系列仓库
 
 本系列共三个仓库，帮你系统掌握 Claude Code 的核心概念：
@@ -78,86 +82,65 @@ Server 向 AI 暴露的可执行操作和可读取的数据。
 ### 创建 MCP Server
 
 ```typescript
-import { createMCPServer } from "@modelcontextprotocol/sdk";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio";
+import { z } from "zod";
 
-const server = createMCPServer({
+// 创建 MCP Server
+const server = new McpServer({
   name: "filesystem-server",
-  version: "1.0.0",
-
-  // 定义工具
-  tools: {
-    readFile: {
-      description: "读取文件内容",
-      parameters: {
-        path: { type: "string", required: true }
-      },
-      async execute({ path }) {
-        const fs = await import("fs/promises");
-        const content = await fs.readFile(path, "utf-8");
-        return { content };
-      }
-    },
-
-    writeFile: {
-      description: "写入文件内容",
-      parameters: {
-        path: { type: "string", required: true },
-        content: { type: "string", required: true }
-      },
-      async execute({ path, content }) {
-        const fs = await import("fs/promises");
-        await fs.writeFile(path, content, "utf-8");
-        return { success: true };
-      }
-    }
-  },
-
-  // 定义资源
-  resources: {
-    "config://app": {
-      description: "应用程序配置",
-      async load() {
-        return { type: "application/json", content: '{"version": "1.0"}' };
-      }
-    }
-  }
+  version: "1.0.0"
 });
 
-// 启动服务器
-server.listen(3000);
-console.log("MCP Server 已启动，监听端口 3000");
+// 注册一个工具：读取文件
+server.tool(
+  "readFile",                          // 工具名称
+  { path: z.string() },                // 参数 schema（用 zod 验证）
+  async ({ path }) => {                 // 实现
+    const fs = await import("fs/promises");
+    const content = await fs.readFile(path, "utf-8");
+    return { content: [{ type: "text", text: content }] };
+  }
+);
+
+// 注册另一个工具：写入文件
+server.tool(
+  "writeFile",
+  { path: z.string(), content: z.string() },
+  async ({ path, content }) => {
+    const fs = await import("fs/promises");
+    await fs.writeFile(path, content, "utf-8");
+    return { content: [{ type: "text", text: "文件写入成功" }] };
+  }
+);
+
+// 通过 stdio 传输启动服务器
+const transport = new StdioServerTransport();
+server.run(transport);
 ```
+
+> 以上为真实 API。MCP Server 使用 `new McpServer()` 创建，用 `.tool()` 注册工具，通过 `StdioServerTransport` 通信。
 
 ### 在 Agent 中使用 MCP
 
 ```typescript
-import { Agent } from "@anthropic-ai/claude-code";
-import { connectMCPServer } from "@modelcontextprotocol/sdk";
+import { query } from "@anthropic-ai/claude-agent-sdk";
 
-async function main() {
-  // 连接 MCP Server
-  const mcpClient = await connectMCPServer({
-    transport: "stdio",
-    server: "filesystem-server"
-  });
+// Claude Agent SDK 原生支持 MCP Server
+// 只需在 Claude Desktop 中配置 MCP Server，Agent 即可自动发现并调用其工具
+// 无需写额外的连接代码
 
-  // 创建 Agent 并连接 MCP
-  const agent = new Agent({
-    model: "claude-opus-4-6",
-    mcpClients: [mcpClient],
-    systemPrompt: "你是文件管理助手，可以读取和写入文件。"
-  });
-
-  // AI 自动调用 MCP 工具
-  const result = await agent.run(
-    "帮我创建一个 hello.txt 文件，内容是 'Hello, MCP!'"
-  );
-
-  console.log(result);
+for await (const message of query({
+  prompt: "帮我创建一个 hello.txt 文件，内容是 'Hello, MCP!'",
+  options: {
+    allowedTools: ["Bash", "Write", "Read"]
+  }
+})) {
+  console.log(message);
 }
-
-main();
 ```
+
+> MCP Server 由 Claude Desktop 等 Host 启动，Agent SDK 通过 MCP 协议与其通信。
 
 ---
 
@@ -259,15 +242,16 @@ what-is-mcp/
 | `references/` | 对应练习的参考解答 | 供对照自查 |
 | `assets/` | 架构图、流程图，供 `concepts/` 文章引用 | 辅助理解 |
 
-### MCP Server 生态
+### MCP Server 生态（官方出品）
 
 | Server | 用途 | 安装命令 |
 |--------|------|---------|
-| **filesystem** | 本地文件读写 | `npm i @modelcontextprotocol/server-filesystem` |
-| **postgres** | PostgreSQL 数据库 | `npm i @modelcontextprotocol/server-postgres` |
-| **slack** | Slack 消息集成 | `npm i @modelcontextprotocol/server-slack` |
-| **github** | GitHub API 操作 | `npm i @modelcontextprotocol/server-github` |
-| **sqlite** | SQLite 数据库 | `npm i @modelcontextprotocol/server-sqlite` |
+| **server-filesystem** | 本地文件读写 | `npm i @modelcontextprotocol/server-filesystem` |
+| **server-postgres** | PostgreSQL 数据库 | `npm i @modelcontextprotocol/server-postgres` |
+| **server-github** | GitHub API 操作 | `npm i @modelcontextprotocol/server-github` |
+| **server-slack** | Slack 消息集成 | `npm i @modelcontextprotocol/server-slack` |
+| **server-sqlite** | SQLite 数据库 | `npm i @modelcontextprotocol/server-sqlite` |
+| **server-sentry** | 错误监控 | `npm i @modelcontextprotocol/server-sentry` |
 
 ### 如何使用本仓库
 
