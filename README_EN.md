@@ -68,11 +68,8 @@ Embedded inside the Host, responsible for communicating with Servers.
 ### 4. JSON-RPC Protocol
 All MCP communication is based on the JSON-RPC 2.0 specification.
 
-### 5. Tool
-An executable operation exposed by a Server to the AI.
-
-### 6. Resource
-Data or content provided by a Server — files, database records, etc.
+### 5. Tools & Resources
+Executable operations and readable data exposed by Servers to the AI.
 
 ---
 
@@ -140,7 +137,7 @@ import { connectMCPServer } from "@modelcontextprotocol/sdk";
 async function main() {
   // Connect to MCP Server
   const mcpClient = await connectMCPServer({
-    transport: "stdio", // or "http://localhost:3000"
+    transport: "stdio",
     server: "filesystem-server"
   });
 
@@ -160,45 +157,6 @@ async function main() {
 }
 
 main();
-```
-
-### Full MCP Server Example (with Error Handling)
-
-```typescript
-import { createMCPServer } from "@modelcontextprotocol/sdk";
-
-const server = createMCPServer({
-  name: "database-server",
-  version: "1.0.0",
-
-  tools: {
-    query: {
-      description: "Execute a database query",
-      parameters: {
-        sql: { type: "string", required: true }
-      },
-      async execute({ sql }, context) {
-        // Permission check
-        if (!context.hasPermission("db:query")) {
-          throw new Error("Insufficient permissions: db:query permission required");
-        }
-
-        // SQL injection protection (example)
-        const dangerousPatterns = /;\s*(DROP|DELETE|TRUNCATE)/i;
-        if (dangerousPatterns.test(sql)) {
-          throw new Error("Dangerous SQL operations are prohibited");
-        }
-
-        // Execute query
-        const db = await getDatabaseConnection();
-        const results = await db.query(sql);
-        return { rows: results };
-      }
-    }
-  }
-});
-
-server.listen();
 ```
 
 ---
@@ -229,10 +187,10 @@ npm install
 npx tsc
 
 # Run MCP Server example
-npx ts-node examples/server.ts
+npx ts-node examples/01-server.ts
 
 # Run client example (in another terminal)
-npx ts-node examples/client.ts
+npx ts-node examples/02-client.ts
 ```
 
 ### Quick Start Built-in MCP Servers
@@ -240,14 +198,68 @@ npx ts-node examples/client.ts
 ```bash
 # Start filesystem server
 npx ts-node node_modules/@modelcontextprotocol/sdk/examples/filesystem.ts
-
-# Start HTTP server
-npx ts-node node_modules/@modelcontextprotocol/sdk/examples/http.ts
 ```
 
 ---
 
-## 📖 MCP Server Ecosystem
+## 📂 Repository Structure
+
+```
+what-is-mcp/
+├── README.md              # Project overview (Chinese)
+├── README_EN.md          # Project overview (English)
+├── LICENSE               # MIT License
+├── package.json          # Project dependencies
+├── tsconfig.json         # TypeScript configuration
+├── .gitignore            # Git ignore rules
+│
+├── concepts/             # 📚 Core concept articles (read with assets/ for best experience)
+│   ├── 01-what-is-mcp.md
+│   ├── 02-host-and-server.md
+│   ├── 03-json-rpc-protocol.md
+│   ├── 04-tools-and-resources.md
+│   └── 05-ecosystem.md
+│
+├── examples/             # 💻 Runnable code examples (each maps to one concept)
+│   ├── 01-basic-server.ts          # Maps to concepts/01: MCP basics
+│   ├── 02-host-and-server.ts       # Maps to concepts/02: Host & Server relationship
+│   ├── 03-protocol-communication.ts # Maps to concepts/03: Protocol communication
+│   ├── 04-tools-resources.ts       # Maps to concepts/04: Tools & Resources
+│   └── 05-ecosystem-servers.ts     # Maps to concepts/05: Ecosystem servers
+│
+├── exercises/             # 🏋️ Exercises (one per concepts/ chapter)
+│   ├── 01-basic-exercise.md
+│   ├── 02-host-server-exercise.md
+│   ├── 03-protocol-exercise.md
+│   ├── 04-tools-resources-exercise.md
+│   └── 05-ecosystem-exercise.md
+│
+├── references/            # 📝 Exercise reference solutions (check after attempting)
+│   ├── 01-basic-solution.ts
+│   ├── 02-host-server-solution.ts
+│   ├── 03-protocol-solution.ts
+│   ├── 04-tools-resources-solution.ts
+│   └── 05-ecosystem-solution.ts
+│
+└── assets/                # 🖼️ Architecture & flow diagrams (referenced by concepts/)
+    ├── mcp-architecture.png          # MCP overall architecture (read with concepts/01)
+    ├── host-server-flow.png          # Host & Server interaction (read with concepts/02)
+    ├── json-rpc-flow.png             # JSON-RPC communication flow (read with concepts/03)
+    ├── tools-resources-diagram.png   # Tools & Resources diagram (read with concepts/04)
+    └── ecosystem-overview.png        # MCP ecosystem overview (read with concepts/05)
+```
+
+### Folder Responsibilities
+
+| Folder | Content | Purpose |
+|--------|---------|---------|
+| `concepts/` | Theory articles, one per chapter | Build conceptual foundation |
+| `examples/` | Runnable code, with concept mapping in header | Learn by doing |
+| `exercises/` | Progressive exercises, one per chapter | Reinforce learning |
+| `references/` | Reference solutions for exercises | Self-check after attempting |
+| `assets/` | Diagrams referenced by `concepts/` articles | Visual aid |
+
+### MCP Server Ecosystem
 
 | Server | Purpose | Install Command |
 |--------|---------|----------------|
@@ -256,6 +268,26 @@ npx ts-node node_modules/@modelcontextprotocol/sdk/examples/http.ts
 | **slack** | Slack message integration | `npm i @modelcontextprotocol/server-slack` |
 | **github** | GitHub API operations | `npm i @modelcontextprotocol/server-github` |
 | **sqlite** | SQLite database | `npm i @modelcontextprotocol/server-sqlite` |
+
+### How to Use This Repository
+
+Follow this path through the material:
+
+```
+Step 1  →  Read concepts/01 introductory article
+           ↓
+Step 2  →  Run examples/01 first code sample
+           ↓
+Step 3  →  Complete exercises/01 corresponding exercise
+           ↓
+Step 4  →  Check references/01 reference solution (self-review)
+           ↓
+Step 5  →  Move to next chapter (concepts/02 → examples/02 → ...)
+
+Repeat until all 5 chapters are complete.
+```
+
+> **Tip:** Exercise difficulty increases with each chapter. Try to work through exercises independently before consulting `references/`.
 
 ---
 

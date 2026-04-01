@@ -35,7 +35,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│                     AI Model                         │
+│                     AI Model                          │
 │                    (Claude 等)                        │
 └──────────────────────┬───────────────────────────────┘
                        │ JSON-RPC over stdio / HTTP
@@ -68,11 +68,8 @@
 ### 4. JSON-RPC 协议
 所有 MCP 通信都基于 JSON-RPC 2.0 规范。
 
-### 5. Tool（工具）
-Server 向 AI 暴露的可执行操作。
-
-### 6. Resource（资源）
-Server 提供的数据或内容，如文件、数据库记录等。
+### 5. 工具与资源（Tools & Resources）
+Server 向 AI 暴露的可执行操作和可读取的数据。
 
 ---
 
@@ -140,7 +137,7 @@ import { connectMCPServer } from "@modelcontextprotocol/sdk";
 async function main() {
   // 连接 MCP Server
   const mcpClient = await connectMCPServer({
-    transport: "stdio", // 或 "http://localhost:3000"
+    transport: "stdio",
     server: "filesystem-server"
   });
 
@@ -160,45 +157,6 @@ async function main() {
 }
 
 main();
-```
-
-### 完整的 MCP Server 示例（带错误处理）
-
-```typescript
-import { createMCPServer } from "@modelcontextprotocol/sdk";
-
-const server = createMCPServer({
-  name: "database-server",
-  version: "1.0.0",
-
-  tools: {
-    query: {
-      description: "执行数据库查询",
-      parameters: {
-        sql: { type: "string", required: true }
-      },
-      async execute({ sql }, context) {
-        // 权限检查
-        if (!context.hasPermission("db:query")) {
-          throw new Error("权限不足：需要 db:query 权限");
-        }
-
-        // SQL 注入防护（示例）
-        const dangerousPatterns = /;\s*(DROP|DELETE|TRUNCATE)/i;
-        if (dangerousPatterns.test(sql)) {
-          throw new Error("禁止执行危险 SQL 操作");
-        }
-
-        // 执行查询
-        const db = await getDatabaseConnection();
-        const results = await db.query(sql);
-        return { rows: results };
-      }
-    }
-  }
-});
-
-server.listen();
 ```
 
 ---
@@ -229,10 +187,10 @@ npm install
 npx tsc
 
 # 运行 MCP Server 示例
-npx ts-node examples/server.ts
+npx ts-node examples/01-server.ts
 
 # 运行客户端调用示例（在另一个终端）
-npx ts-node examples/client.ts
+npx ts-node examples/02-client.ts
 ```
 
 ### 快速启动内置 MCP Server
@@ -240,14 +198,68 @@ npx ts-node examples/client.ts
 ```bash
 # 启动文件系统服务器
 npx ts-node node_modules/@modelcontextprotocol/sdk/examples/filesystem.ts
-
-# 启动 HTTP 服务器
-npx ts-node node_modules/@modelcontextprotocol/sdk/examples/http.ts
 ```
 
 ---
 
-## 📖 MCP Server 生态
+## 📂 仓库目录结构
+
+```
+what-is-mcp/
+├── README.md              # 项目说明（中文）
+├── README_EN.md          # 项目说明（英文）
+├── LICENSE               # MIT 开源许可证
+├── package.json          # 项目依赖配置
+├── tsconfig.json         # TypeScript 编译配置
+├── .gitignore            # Git 忽略文件
+│
+├── concepts/             # 📚 核心概念文章（与 assets/ 图片配合阅读效果更佳）
+│   ├── 01-what-is-mcp.md
+│   ├── 02-host-and-server.md
+│   ├── 03-json-rpc-protocol.md
+│   ├── 04-tools-and-resources.md
+│   └── 05-ecosystem.md
+│
+├── examples/             # 💻 可运行代码示例（每个文件对应一个核心概念）
+│   ├── 01-basic-server.ts          # 对应 concepts/01：MCP 基础概念
+│   ├── 02-host-and-server.ts       # 对应 concepts/02：Host 与 Server 关系
+│   ├── 03-protocol-communication.ts # 对应 concepts/03：协议通信流程
+│   ├── 04-tools-resources.ts       # 对应 concepts/04：工具与资源定义
+│   └── 05-ecosystem-servers.ts     # 对应 concepts/05：生态 Server 介绍
+│
+├── exercises/             # 🏋️ 练习题（每道题对应一篇 concepts/ 文章）
+│   ├── 01-basic-exercise.md
+│   ├── 02-host-server-exercise.md
+│   ├── 03-protocol-exercise.md
+│   ├── 04-tools-resources-exercise.md
+│   └── 05-ecosystem-exercise.md
+│
+├── references/            # 📝 练习参考答案（建议先独立完成再对照）
+│   ├── 01-basic-solution.ts
+│   ├── 02-host-server-solution.ts
+│   ├── 03-protocol-solution.ts
+│   ├── 04-tools-resources-solution.ts
+│   └── 05-ecosystem-solution.ts
+│
+└── assets/                # 🖼️ 架构图、流程图（供 concepts/ 文章引用）
+    ├── mcp-architecture.png          # MCP 整体架构图（配合 concepts/01 阅读）
+    ├── host-server-flow.png          # Host 与 Server 交互图（配合 concepts/02 阅读）
+    ├── json-rpc-flow.png             # JSON-RPC 通信流程图（配合 concepts/03 阅读）
+    ├── tools-resources-diagram.png   # 工具与资源关系图（配合 concepts/04 阅读）
+    └── ecosystem-overview.png        # MCP 生态总览图（配合 concepts/05 阅读）
+```
+
+### 文件夹职责
+
+| 文件夹 | 内容 | 用途 |
+|--------|------|------|
+| `concepts/` | 核心理论文章，每篇讲一个知识点 | 帮助新手建立概念框架 |
+| `examples/` | 精心设计的可运行代码，顶部标注对应概念 | 边学边实践 |
+| `exercises/` | 难度递进的练习（与 concepts/ 章节一一对应）| 巩固学习效果 |
+| `references/` | 对应练习的参考解答 | 供对照自查 |
+| `assets/` | 架构图、流程图，供 `concepts/` 文章引用 | 辅助理解 |
+
+### MCP Server 生态
 
 | Server | 用途 | 安装命令 |
 |--------|------|---------|
@@ -256,6 +268,26 @@ npx ts-node node_modules/@modelcontextprotocol/sdk/examples/http.ts
 | **slack** | Slack 消息集成 | `npm i @modelcontextprotocol/server-slack` |
 | **github** | GitHub API 操作 | `npm i @modelcontextprotocol/server-github` |
 | **sqlite** | SQLite 数据库 | `npm i @modelcontextprotocol/server-sqlite` |
+
+### 如何使用本仓库
+
+推荐按以下路径依次学习：
+
+```
+第 1 步  →  阅读 concepts/01 入门文章
+           ↓
+第 2 步  →  运行 examples/01 第一个代码示例
+           ↓
+第 3 步  →  完成 exercises/01 对应练习
+           ↓
+第 4 步  →  查阅 references/01 参考答案（自查）
+           ↓
+第 5 步  →  进入下一章（concepts/02 → examples/02 → ...）
+
+循环往复，直至完成全部 5 章。
+```
+
+> **提示：** `exercises/` 的习题难度随章节递增。建议先独立思考，实在卡住再看 `references/`。
 
 ---
 
