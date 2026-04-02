@@ -1,7 +1,7 @@
 {
   "name": "what-is-mcp",
   "version": "1.0.0",
-  "description": "面向零基础新手的 MCP（Model Context Protocol）概念教学仓库",
+  "description": "A hands-on MCP (Model Context Protocol) tutorial — build servers, tools, resources, and explore the MCP ecosystem",
   "type": "module",
   "scripts": {
     "example": "tsx examples/01-basic-server.ts"

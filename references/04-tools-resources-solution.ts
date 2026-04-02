@@ -104,7 +104,7 @@ server.tool(
     if (results.length === 0) {
       return { content: [{ type: "text" as const, text: "没有找到匹配的书籍" }] };
     }
-    const lines = results.map((b) => `【${b.id}】《${b.title》} - ${b.author}（库存：${b.stock}）`);
+    const lines = results.map((b) => `【${b.id}】《${b.title}》 - ${b.author}（库存：${b.stock}）`);
     return { content: [{ type: "text" as const, text: lines.join("\n") }] };
   }
 );
